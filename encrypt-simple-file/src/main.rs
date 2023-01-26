@@ -15,6 +15,9 @@ fn main() {
     OsRng.fill_bytes(&mut nonce);
     println!("Encrypting file");
     encrypt_file("test.txt", "test.encrypted", &key, &nonce);
+
+    println!("decrypting file");
+    decrypt_file("test.encrypted", "unecnrypted_file.txt", &key, &nonce);
 }
 
 pub fn encrypt_file(filepath: &str, dest: &str, key: &[u8; 32], nonce: &[u8; 24])
@@ -32,3 +35,17 @@ pub fn encrypt_file(filepath: &str, dest: &str, key: &[u8; 32], nonce: &[u8; 24]
 
         Ok(())
      }
+
+pub fn decrypt_file(file_path: &str, dest: &str, key: &[u8; 32], nonce: &[u8; 24]) -> Result<(), anyhow::Error> {
+    let cipher = XChaCha20Poly1305::new(key.into());
+
+    let file_data = fs::read(file_path)?;
+
+    let decrypted_file = cipher
+        .decrypt(nonce.into(), file_data.as_ref())
+        .map_err(|err| anyhow!("Decrypting small file: {}", err))?;
+
+        fs::write(&dest, decrypted_file)?;
+
+        Ok(())
+}
